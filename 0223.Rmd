@@ -1,0 +1,158 @@
+---
+title: '0223'
+author: "SS"
+date: "2/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(maps)
+library(ggplot2)
+library(viridis)
+library(gghighlight)
+library(tidyverse)
+library(dplyr) #for arrange(year,count), reference: https://stackoverflow.com/questions/45701214/how-to-order-column-of-data-frame-by-another-variable https://stackoverflow.com/questions/27766054/getting-the-top-values-by-group
+```
+
+```{r}
+df <- read.csv("GDIS_modify.csv", header=TRUE, sep=",", na.strings=" ")
+```
+```{r}
+df %>%
+  filter(adm1=="Beijing") %>%
+  group_by(year,disastertype) %>%
+  ggplot(aes(x=year,fill=disastertype))+geom_bar()+labs(
+    title="Nature Disaster in Beijing, 1980-now")
+  
+df %>%
+  filter(adm1=="Beijing")
+```
+```{r}
+df %>%
+  filter(adm1=="Heilongjiang"|adm1=="Jilin"|adm1=="Liaoning") %>%
+  #group_by(year,disastertype) %>%
+  ggplot(aes(x=disastertype,fill=disastertype))+geom_bar()+labs(title="Nature Diseaster type in Northeast")
+```
+
+
+```{r}
+df %>%
+  group_by(country,year) %>%
+  summarise(count=n()) %>%
+  filter(year<=2015&year>=2010) %>%
+  arrange(year,count) %>%
+  group_by_(~ year) %>%
+  do(tail(., n = 10)) %>%
+  ggplot(aes(x=reorder(country,count),y=count,color=year))+geom_point()+theme(axis.text.x = element_text(face="bold", size=7, angle=30))+geom_line()+scale_color_viridis()+labs(
+    x="Countries",
+    y="Natural Disaster Counts", 
+    title="Top 20 countries in nature disaster from 2010-2015",
+    subtitle="By country"
+  )+gghighlight()
+```
+
+```{r}
+df %>%
+  group_by(country,year) %>%
+  summarise(count=n()) %>%
+  filter(year<=2015&year>=2010) %>%
+  arrange(year,count) %>%
+  group_by_(~ year) %>%
+  do(tail(., n = 10)) %>%
+ # view()%>%
+  ggplot(aes(x=reorder(country,count),y=count,color=year,group=year))+geom_point()+theme(axis.text.x = element_text(face="bold", size=7, angle=30))+geom_line()+scale_color_viridis()+labs(
+    x="Countries",
+    y="Natural Disaster Counts", 
+    title="Top 20 countries in nature disaster from 2010-2015",
+    subtitle="By year"
+  )
+```
+```{r}
+```
+
+
+```{r}
+df[df == "United States"] <- "USA"
+```
+
+
+```{r}
+df_mutate<-df %>%
+  select(country,year,disastertype) %>%
+   group_by(country,year) %>%
+  summarise(count=n()) 
+world_map<-map_data("world") %>%
+  left_join(df_mutate,by=(c("region"="country")))
+```
+
+
+```{r}
+df_20<-df %>%
+  group_by(country,year) %>%
+  summarise(count=n()) %>%
+  filter(year<=2015&year>=2010) %>%
+  arrange(year,count) %>%
+  group_by_(~ year) %>%
+  do(tail(., n = 10)) 
+world_map_20<-map_data("world") %>%
+  left_join(df_20,by=(c("region"="country"))) %>%
+  filter(count!="")
+  
+```
+
+```{r}
+world_map_20 %>%
+  filter(year==2010) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+scale_fill_distiller( limits = c(min(world_map_20$count),max(world_map_20$count)))+labs(x="Longtitude",y="Latitude",title="Top 20 countries in nature disaster in 2010")+expand_limits(x=c(-100,200), y=c(-50, 80))
+
+world_map_20 %>%
+  filter(year==2011) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+scale_fill_distiller( limits = c(min(world_map_20$count),max(world_map_20$count)))+labs(x="Longtitude",y="Latitude",title="Top 20 countries in nature disaster in 2011")+expand_limits(x=c(-100,200), y=c(-50, 80))
+
+world_map_20 %>%
+  filter(year==2012) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+scale_fill_distiller( limits = c(min(world_map_20$count),max(world_map_20$count)))+labs(x="Longtitude",y="Latitude",title="Top 20 countries in nature disaster in 2012")+expand_limits(x=c(-100,200), y=c(-50, 80))
+
+world_map_20 %>%
+  filter(year==2013) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+scale_fill_distiller( limits = c(min(world_map_20$count),max(world_map_20$count)))+labs(x="Longtitude",y="Latitude",title="Top 20 countries in nature disaster in 2013")+expand_limits(x=c(-100,200), y=c(-50, 80))
+
+world_map_20 %>%
+  filter(year==2014) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+scale_fill_distiller( limits = c(min(world_map_20$count),max(world_map_20$count)))+labs(x="Longtitude",y="Latitude",title="Top 20 countries in nature disaster in 2014")+expand_limits(x=c(-100,200), y=c(-50, 80))
+
+
+```
+```{r}
+world_map %>%
+  filter(year==2013) %>%
+  #group_by(region) %>%
+ # mutate(count=n()) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+labs(title="2013 World Map by disaster")+scale_fill_distiller( limits=c(min=1,max=400))
+#+expand_limits(x=c(-100,200), y=c(-50, 80))
+```
+```{r}
+```
+
+
+```{r}
+df_mutate_forthis<-df_mutate<-df %>%
+  select(country,year,disastertype) %>%
+   group_by(country,year,disastertype) %>%
+  summarise(count=n()) 
+world_map_forthis<-map_data("world") %>%
+  left_join(df_mutate,by=(c("region"="country")))
+```
+
+
+```{r}
+world_map_forthis %>%
+  filter(year==2015) %>%
+  filter(disastertype!="mass movement (dry)") %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+facet_wrap(vars(disastertype))+labs(title="2015 World Map by disaster type")+scale_fill_distiller( limits=c(min=1,max=300))
+```
+
+
