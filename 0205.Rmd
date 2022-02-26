@@ -1,0 +1,101 @@
+---
+title: '0209-ss'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r}
+#install.packages("viridis")
+library(viridis)
+library(tidyverse)
+df <- read.table("GDIS_disasterlocations.csv", header=TRUE, sep=";", na.strings=" ")
+```
+```{r}
+df %>%
+ggplot()+geom_bar(mapping=aes(x=year,fill=disastertype))+labs(x = "Year",  
+       y = "Disaster locations",
+       title = "Temporal trends in disaster locations by time")+ scale_fill_viridis(discrete=T,option ="D",direction = -1)
+```
+```{r}
+```
+
+
+```{r}
+library(countrycode)
+  df$continent <- countrycode(sourcevar = df[, "country"],
+                            origin = "country.name",
+                            destination = "continent")
+```
+
+
+```{r}
+admshare <- df %>%
+  count(year,level,continent) %>%
+  group_by(year,continent) %>%
+  mutate(percent=n/sum(n)) %>%
+  ungroup
+
+admshare %>%
+  filter(continent!="")%>%
+  arrange(level)%>%
+  ggplot()+geom_bar(aes(x=year,y=percent,fill=level,width=0.9),position = "fill",stat = "identity")+facet_grid("continent")+scale_y_continuous(labels=scales::percent)+theme(axis.text.x = element_text(face="bold", size=7, angle=30))+
+  labs(x = "",
+       y = "Share of total",
+       fill="Administrative level",
+       title="Temporal trends in disaster locations by continent")
+```
+```{r}
+df %>%
+  group_by(disastertype)%>%
+  summarise(count=n())%>%
+  ggplot(aes(x=reorder(disastertype,count),y=count,fill=disastertype))+geom_bar(stat = 'identity',position = "stack")+labs(
+    x="Types of Disasters", 
+    title=" Numbers of different disasters "
+  ) +theme(axis.text.x = element_text(face="bold", size=7, angle=30))+ scale_fill_viridis(discrete=T,option ="D",direction = -1)#+coord_polar(theta = 'y')
+```
+```{r}
+df %>%
+  mutate(Decades=case_when(
+    year>=1960&year<=1969 ~ "1960's",
+    year>=1970&year<=1979 ~ "1970's",
+    year>=1980&year<=1989 ~ "1980's",
+    year>=1990&year<=1999 ~ "1990's",
+    year>=2000&year<=2009 ~ "2000's",
+    year>=2010&year<=2019 ~ "2010's",
+  )) %>%
+  filter(continent!='')%>%
+  group_by(continent,Decades) %>%
+  summarise(count=n())%>%
+  ggplot(aes(x=Decades,y=count,color=continent,group=continent,fill=continent))+ geom_bar(stat = 'identity', position = 'fill', width = 1)+ scale_fill_viridis(discrete=T,option ="D",direction = -1)+labs(title="Temporal trend for continent disaster propotion")
+```
+```{r}
+all<-39953
+df %>%
+  group_by(continent) %>%
+# summarise(count=n())%>%
+  mutate(pc=5/all) %>%
+  ungroup(continent) %>%
+  filter(continent!='') %>%
+  ggplot(aes(x = factor (1),fill=continent))+geom_bar()+ coord_polar ("y", start = 0)+scale_fill_viridis(discrete=T,option ="D",direction = -1)+ theme(axis.text = element_blank())+ labs(x='',y='', title = 'Total number of disasters by continent')#+geom_text(label=count/length(continent))
+```
+```{r}
+df %>% 
+  mutate(Decades=case_when(
+    year>=1960&year<=1969 ~ "1960's",
+    year>=1970&year<=1979 ~ "1970's",
+    year>=1980&year<=1989 ~ "1980's",
+    year>=1990&year<=1999 ~ "1990's",
+    year>=2000&year<=2009 ~ "2000's",
+    year>=2010&year<=2019 ~ "2010's",
+  )) %>%
+  group_by(disastertype,Decades) %>%
+  summarise(count=n()) %>%
+  ggplot(aes(x=Decades,y=count,color=disastertype,group=disastertype,fill=disastertype))+geom_point()+geom_line()
+```
+
