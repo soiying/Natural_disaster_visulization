@@ -1,0 +1,71 @@
+---
+title: '0214'
+author: "SS"
+date: "2/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+```
+reference: https://blog.csdn.net/qq_41504254/article/details/111038887
+```
+```{r}
+library(maps)
+library(mapdata) #for China data
+library(ggplot2)
+library(viridis)
+library(tidyverse)
+#for china
+library(dplyr)
+library(magrittr)
+library(hchinamap)
+```
+
+```{r}
+df <- read.csv("GDIS_modify.csv", header=TRUE, sep=",", na.strings=" ")
+```
+
+```{r}
+df_mutate<-df %>%
+  select(country,year,disastertype)
+world_map<-map_data("world") %>%
+  left_join(df_mutate,by=(c("region"="country")))
+```
+```{r}
+world_map %>%
+  filter(year==2015) %>%
+  group_by(disastertype,region)%>%
+  mutate(count=n()) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+facet_wrap(vars(disastertype))+scale_fill_gradient(low="snow",high="navy")
+  
+
+```
+```{r}
+library(countrycode)
+  world_map$continent <- countrycode(sourcevar = world_map[, "region"],
+                            origin = "country.name",
+                            destination = "continent")
+```
+```{r}
+
+world_map %>%
+  filter(year==2010) %>%
+  filter(continent!='') %>%
+  group_by(region) %>%
+  mutate(count=n()) %>%
+  ggplot(aes(x=long,y=lat,group=group))+geom_polygon(aes(fill=count),color="white")+facet_wrap(vars(continent),scales = "free")+scale_fill_gradient(low="snow",high="navy")
+```
+```{r}
+df_mutate_china<-filter(df,country=="China") %>%
+  group_by(adm1,disastertype) %>%
+  mutate(count=n()) 
+
+hchinamap(name =df_mutate_china$adm1, value = df_mutate_china$count,
+           width = "100%", height = "400px",
+           title = "Map of China", region = "China")
+```
+
